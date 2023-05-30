@@ -23,14 +23,21 @@ public class AmqpApplicationTest {
 
     @Test
     public void message_is_received_when_sent_by_sender() throws InterruptedException {
-        sender.send();
+        sender.send(1);
         List<String> receivedMessages = new ArrayList<>();
+        waitAndReceive(receivedMessages);
+        assertThat(receivedMessages).containsExactly("Hello 1 from RabbitMQ!");
+
+        sender.send(2);
+        waitAndReceive(receivedMessages);
+        assertThat(receivedMessages).containsExactly("Hello 2 from RabbitMQ!");
+    }
+
+    private void waitAndReceive(List<String> receivedMessages)  throws InterruptedException {
         while (receivedMessages.isEmpty()) {
             receivedMessages.addAll(receiver.getMessages());
             TimeUnit.MILLISECONDS.sleep(100L);
         }
-
-        assertThat(receivedMessages).containsExactly("Hello from RabbitMQ!");
     }
 }
 
