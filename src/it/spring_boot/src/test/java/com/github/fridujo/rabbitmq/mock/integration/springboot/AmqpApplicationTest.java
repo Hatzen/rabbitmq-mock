@@ -28,7 +28,9 @@ public class AmqpApplicationTest {
         waitAndReceive(receivedMessages);
         assertThat(receivedMessages).containsExactly("Hello 1 from RabbitMQ!");
 
+        receivedMessages = new ArrayList<>();
         sender.send(2);
+        Thread.sleep(2000);
         waitAndReceive(receivedMessages);
         assertThat(receivedMessages).containsExactly("Hello 2 from RabbitMQ!");
     }
@@ -36,6 +38,7 @@ public class AmqpApplicationTest {
     private void waitAndReceive(List<String> receivedMessages)  throws InterruptedException {
         while (receivedMessages.isEmpty()) {
             receivedMessages.addAll(receiver.getMessages());
+            receiver.getMessages().clear();
             TimeUnit.MILLISECONDS.sleep(100L);
         }
     }
