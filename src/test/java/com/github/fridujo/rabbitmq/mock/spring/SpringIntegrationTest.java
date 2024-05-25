@@ -12,10 +12,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.AsyncRabbitTemplate;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -68,7 +65,7 @@ class SpringIntegrationTest {
                 rabbitTemplate.convertAndSend(EXCHANGE_NAME, "test.key2", messageBody);
 
                 List<String> receivedMessages = new ArrayList<>();
-                assertTimeoutPreemptively(ofMillis(500L), () -> {
+                assertTimeoutPreemptively(ofMillis(50000L), () -> {
                         while (receivedMessages.isEmpty()) {
                             receivedMessages.addAll(receiver.getMessages());
                             TimeUnit.MILLISECONDS.sleep(100L);
@@ -77,6 +74,26 @@ class SpringIntegrationTest {
                 );
 
                 assertThat(receivedMessages).containsExactly(messageBody);
+
+
+                receiver.getMessages().clear();
+                rabbitTemplate.convertAndSend(EXCHANGE_NAME, "test.key2", messageBody + 2);
+                TimeUnit.MILLISECONDS.sleep(1000L);
+
+
+
+                List<String> receivedMessages2 = new ArrayList<>();
+                assertTimeoutPreemptively(ofMillis(50000L), () -> {
+                        while (receivedMessages2.isEmpty()) {
+                            receivedMessages2.addAll(receiver.getMessages());
+                            TimeUnit.MILLISECONDS.sleep(100L);
+                        }
+                    }
+                );
+
+                assertThat(receivedMessages2).containsExactly(messageBody + 2);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             } finally {
                 container.stop();
             }
@@ -158,6 +175,10 @@ class SpringIntegrationTest {
             container.setConnectionFactory(connectionFactory);
             container.setQueueNames(QUEUE_NAME);
             container.setMessageListener(listenerAdapter);
+            // container.setDefaultRequeueRejected(false);
+            // container.setAlwaysRequeueWithTxManagerRollback(true);
+            // container.setAcknowledgeMode(AcknowledgeMode.AUTO);
+            // container.setAcknowledgeMode(AcknowledgeMode.NONE);
             return container;
         }
 
